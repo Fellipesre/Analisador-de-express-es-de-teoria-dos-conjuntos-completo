@@ -1,0 +1,66 @@
+import random
+from random import randint
+import string
+
+class AutomatoShuntingYardController:
+    def __init__(self, Precedencia, Associatividade):
+        self.precedencia = {
+            'EQUALS': 0,
+            'UNION': 1,
+            'INTERSECTION': 2,
+            'PRODUCT': 3,
+            'DIFFERENCE': 4,
+            'COMPLEMENT': 5,
+            'POWERSET':6
+        }
+        self.associatividade = {
+            'EQUALS':'left',
+            'UNION':'left',
+            'INTERSECTION':'left',
+            'PRODUCT':'left',
+            'DIFFERENCE':'left',
+            'COMPLEMENT':'left',
+            'POWERSET':'left'
+         }
+
+    def GeraSaida(self, LinhaTokensTipo, LinhaTokensValor):
+        Pilha = []
+        Fila = []
+        #print(LinhaTokensTipo)
+        #print(LinhaTokensValor)
+        cont = 0
+        while cont < len(LinhaTokensTipo):
+            #print('Pilha: ', end=' ')
+            #print(Pilha)
+            #print('Fila: ', end=' ')
+            #print(Fila)
+            if LinhaTokensTipo[cont] == "ID" or LinhaTokensTipo[cont] == "SET":
+                Fila.append(LinhaTokensValor[cont])
+            elif LinhaTokensTipo[cont] == "LPAREN":
+                Pilha.append(LinhaTokensTipo[cont])
+            elif LinhaTokensTipo[cont] == "RPAREN":
+                while Pilha[len(Pilha) - 1] != "LPAREN":
+                    Fila.append(Pilha.pop())
+                Pilha.pop()
+            else:
+                nivelprec = self.Precedencia.get(LinhaTokensTipo[cont])
+                tipoassoc = self.Associatividade.get(LinhaTokensTipo[cont])
+                if len(Pilha) == 0 or Pilha[len(Pilha) - 1] == "LPAREN":
+                    Pilha.append(LinhaTokensTipo[cont])
+                else:
+                    proxnivelprec = self.Precedencia.get(Pilha[len(Pilha) - 1], -1)
+                    if tipoassoc == 'left':
+                        while len(Pilha) > 0 and Pilha[len(Pilha) - 1] != "LPAREN" and proxnivelprec >= nivelprec:
+                            Fila.append(Pilha.pop())
+                            if(len(Pilha) > 0):
+                                proxnivelprec = self.Precedencia.get(Pilha[len(Pilha) - 1], -1)
+                    elif tipoassoc == 'right':
+                        while len(Pilha) > 0 and Pilha[len(Pilha) - 1] != "LPAREN" and proxnivelprec > nivelprec:
+                            Fila.append(Pilha.pop())
+                            if(len(Pilha) > 0):
+                                proxnivelprec = self.Precedencia.get(Pilha[len(Pilha) - 1], -1)
+                    Pilha.append(LinhaTokensTipo[cont])
+            cont += 1
+        while len(Pilha) > 0:
+            Fila.append(Pilha.pop())
+        return Fila

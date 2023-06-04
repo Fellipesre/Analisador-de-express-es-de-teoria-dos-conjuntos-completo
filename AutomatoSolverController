@@ -1,0 +1,4 @@
+class AutomatoSolverController:
+    def __init__(self, entrada):
+        self.memConjunto = []
+        self.entrada = entrada

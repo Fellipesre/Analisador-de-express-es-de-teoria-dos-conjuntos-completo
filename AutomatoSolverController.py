@@ -4,6 +4,7 @@ class AutomatoSolverController:
     def __init__(self, entrada, conjUniverso):
         self.memConjunto = {}
         self.entrada = entrada
+        self.pilha = list()
         if isinstance(conjUniverso, list):
             self.conjUniverso = set(conjUniverso)
         else:
@@ -22,6 +23,7 @@ class AutomatoSolverController:
     def resetar(self, entrada):
         self.memConjunto = {}
         self.entrada = entrada
+        self.pilha = list()
         self.numArgumento = {
             'EQUALS': 2,
             'UNION': 2,
@@ -254,6 +256,90 @@ class AutomatoSolverController:
 
             self.index = len(self.entrada) - 1
             return 'OPERACAO', operacaoRealizada
-#BUG 10 avancar
-#((~(((p(((E/\V)xI)x{-4, -3}))\/{4, -1})x{}))-{})xO
-#((~(((p((({1,-1}/\{0,1})x{-1,0,1})x{-4, -3}))\/{4, -1})x{}))-{})x{0}
+
+    def novoProximo(self):
+        if len(self.entrada) == 1:
+            return
+        token = self.entrada[0]
+
+        if token[0] == 'SET':
+            self.pilha.append(token[1])
+            self.entrada.pop(0)
+            return 'TRANSICAO', 'SET lido com sucesso'
+        elif token[0] == 'ID':
+            self.pilha.append(token[1])
+            self.entrada.pop(0)
+            return 'TRANSICAO', 'ID lido com sucesso'
+
+        varDireita = None
+        varEsquerda = None
+        conjRes = None
+        operacaoRealizada = None
+        if(self.numArgumento.get(token[0]) == 1):
+            if isinstance(self.pilha[-1], str):
+                varDireita = self.memConjunto.get(self.pilha[-1])
+                if varDireita == None:
+                    return 'ERRO', 'SET da direita não encontrado'
+                else:
+                    #SET encontrado
+                    pass
+            else:
+                varDireita = self.pilha[-1]
+
+            if token[0] == 'COMPLEMENT':
+                conjRes = self.complemento(varDireita)
+                operacaoRealizada = '~' + str(varDireita)
+            elif token[0] == 'POWERSET':
+                conjRes = self.conjuntoDasPartes(varDireita)
+                operacaoRealizada = 'p' + str(varDireita)
+            self.entrada.pop(0)
+            self.pilha.pop(-1)
+            self.pilha.append(conjRes)
+        else:
+            #Variavel da direita
+            if isinstance(self.pilha[-1], str):
+                varDireita = self.memConjunto.get(self.pilha[-1])
+                if varDireita == None:
+                    return 'ERRO', 'SET da direita não encontrado'
+                else:
+                    #SET encontrado
+                    pass
+            else:
+                varDireita = self.pilha[-1]
+            #Variavel da esquerda
+            if isinstance(self.pilha[-2], str):
+                if token[0] == 'EQUALS':
+                    varEsquerda = self.pilha[-2]
+                else:
+                    varEsquerda = self.memConjunto.get(self.pilha[-2])
+                    if varEsquerda == None:
+                        return 'ERRO', 'SET da esquerda não encontrado'
+                    else:
+                        #SET encontrado
+                        pass
+            else:
+                varEsquerda = self.pilha[-2]
+
+            if token[0] == 'UNION':
+                conjRes = self.uniao(varEsquerda, varDireita)
+                operacaoRealizada = str(varEsquerda) + '\\/' + str(varDireita)
+            elif token[0] == 'INTERSECTION':
+                conjRes = self.interseccao(varEsquerda, varDireita)
+                operacaoRealizada = str(varEsquerda) + '/\\' + str(varDireita)
+            elif token[0] == 'PRODUCT':
+                conjRes = self.produtoCartesiano(varEsquerda, varDireita)
+                operacaoRealizada = str(varEsquerda) + 'x' + str(varDireita)
+            elif token[0] == 'DIFFERENCE':
+                conjRes = self.diferenca(varEsquerda, varDireita)
+                operacaoRealizada = str(varEsquerda) + '-' + str(varDireita)
+            elif token[0] == 'EQUALS':
+                self.adicionarConjuntoAMemoria(varEsquerda, varDireita)
+                operacaoRealizada = varEsquerda + '=' + str(varDireita)
+                conjRes = varDireita
+
+            self.entrada.pop(0)
+            self.pilha.pop(-1)
+            self.pilha.pop(-1)
+            self.pilha.append(conjRes)
+
+        return 'OPERACAO', operacaoRealizada

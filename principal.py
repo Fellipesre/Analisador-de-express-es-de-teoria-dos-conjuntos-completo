@@ -2,6 +2,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from PyQt5.QtCore import QTimer
 from AutomatoLexicoController import *
 from AutomatoShuntingYardController import *
+from AutomatoPushdownController import *
 from AutomatoSolverController import *
 
 from PyQt5 import QtCore, QtGui, QtWidgets
@@ -144,6 +145,7 @@ class Ui_MainWindow(object):
         self.tmrAutomaticoState = ''
         # Variaveis
         self.automatoLexico = AutomatoLexicoController("")
+        self.automatoPushdown = AutomatoPushdownController()
         self.automatoShuntingYard = AutomatoShuntingYardController([])
         self.automatoSolver = AutomatoSolverController([], list(range(-101, 101)))
         self.strOutLexicoEntrada = ""
@@ -216,9 +218,16 @@ class Ui_MainWindow(object):
     def iniciarAutomatos(self):
         entrada = self.inpExpressao.text()
         self.automatoLexico.resetar(entrada)
-        self.automatoShuntingYard.resetar(self.automatoLexico.saida())
-        self.automatoSolver.resetar(self.automatoShuntingYard.saida())
-        self.automatoShuntingYard.resetar(self.automatoLexico.saida())
+        saidaAutomatoLexico = self.automatoLexico.saida()
+        if(saidaAutomatoLexico is None):
+            return -1
+        if(self.automatoPushdown.analiseSintatica(saidaAutomatoLexico) == 0):
+            self.automatoShuntingYard.resetar(self.automatoLexico.saida())
+            self.automatoSolver.resetar(self.automatoShuntingYard.saida())
+            self.automatoShuntingYard.resetar(self.automatoLexico.saida())
+            return 0
+        else:
+            return -2
 
     def gerarExpressao(self):
         ale = GeraParsingEsq(9)
@@ -233,28 +242,76 @@ class Ui_MainWindow(object):
         self.inpExpressao.setText(entrada)
 
     def confirmarExpressao(self):
-        self.iniciarAutomatos()
-        self.strOutLexicoEntrada = ""
-        self.strOutLexicoSaida = ""
-        self.strOutSintaticoShuntingYardEntrada = ""
-        self.strOutSintaticoShuntingYardFila = ""
-        self.strOutSintaticoShuntingYardPilha = ""
-        self.inpExpressao.setEnabled(False)
-        self.btnConfirmar.setEnabled(False)
-        self.btnGerar.setEnabled(False)
-        self.btnAutomatico.setEnabled(False)
-        self.outLexicoSaida.setEnabled(True)
-        self.outLexicoEntrada.setEnabled(True)
-        self.btnLexicoAvancar.setEnabled(True)
-        self.outSintaticoShuntingYardEntrada.setEnabled(True)
-        self.outSintaticoShuntingYardPilha.setEnabled(True)
-        self.outSintaticoShuntingYardFila.setEnabled(True)
-        self.btnSintaticoProximo.setEnabled(True)
-        self.btnSintaticoAnterior.setEnabled(True)
-        self.btnSintaticoShuntingYardAvancar.setEnabled(True)
-        self.outSemanticoEntrada.setEnabled(True)
-        self.btnSemanticoAvancar.setEnabled(True)
-        self.btnSemanticoAdicionar.setEnabled(True)
+        retornoInicializacaoAutomato = self.iniciarAutomatos()
+        if (retornoInicializacaoAutomato == 0):
+            self.strOutLexicoEntrada = ""
+            self.strOutLexicoSaida = ""
+            self.strOutSintaticoShuntingYardEntrada = ""
+            self.strOutSintaticoShuntingYardFila = ""
+            self.strOutSintaticoShuntingYardPilha = ""
+            self.inpExpressao.setEnabled(False)
+            self.btnConfirmar.setEnabled(False)
+            self.btnGerar.setEnabled(False)
+            self.btnAutomatico.setEnabled(False)
+            self.outLexicoSaida.setEnabled(True)
+            self.outLexicoEntrada.setEnabled(True)
+            self.btnLexicoAvancar.setEnabled(True)
+            self.outSintaticoShuntingYardEntrada.setEnabled(True)
+            self.outSintaticoShuntingYardPilha.setEnabled(True)
+            self.outSintaticoShuntingYardFila.setEnabled(True)
+            self.btnSintaticoProximo.setEnabled(True)
+            self.btnSintaticoAnterior.setEnabled(True)
+            self.btnSintaticoShuntingYardAvancar.setEnabled(True)
+            self.outSemanticoEntrada.setEnabled(True)
+            self.btnSemanticoAvancar.setEnabled(True)
+            self.btnSemanticoAdicionar.setEnabled(True)
+        elif (retornoInicializacaoAutomato == -1):
+            self.strOutLexicoEntrada = "ERRO LÉXICO"
+            self.strOutLexicoSaida = ""
+            self.strOutSintaticoShuntingYardEntrada = "ERRO LÉXICO"
+            self.strOutSintaticoShuntingYardFila = ""
+            self.strOutSintaticoShuntingYardPilha = ""
+            self.inpExpressao.setEnabled(False)
+            self.btnConfirmar.setEnabled(False)
+            self.btnGerar.setEnabled(False)
+            self.btnAutomatico.setEnabled(False)
+            self.outLexicoSaida.setEnabled(False)
+            self.outLexicoEntrada.setEnabled(False)
+            self.btnLexicoAvancar.setEnabled(False)
+            self.outSintaticoShuntingYardEntrada.setEnabled(False)
+            self.outSintaticoShuntingYardPilha.setEnabled(False)
+            self.outSintaticoShuntingYardFila.setEnabled(False)
+            self.btnSintaticoProximo.setEnabled(False)
+            self.btnSintaticoAnterior.setEnabled(False)
+            self.btnSintaticoShuntingYardAvancar.setEnabled(False)
+            self.outSemanticoEntrada.setEnabled(False)
+            self.btnSemanticoAvancar.setEnabled(False)
+            self.btnSemanticoAdicionar.setEnabled(False)
+            self.outLexicoEntrada.setHtml(self.strOutLexicoEntrada)
+            self.outSintaticoShuntingYardEntrada.setHtml(self.strOutSintaticoShuntingYardEntrada)
+        elif(retornoInicializacaoAutomato == -2):
+            self.strOutLexicoEntrada = ""
+            self.strOutLexicoSaida = ""
+            self.strOutSintaticoShuntingYardEntrada = "ERRO SINTÁTICO"
+            self.strOutSintaticoShuntingYardFila = ""
+            self.strOutSintaticoShuntingYardPilha = ""
+            self.inpExpressao.setEnabled(False)
+            self.btnConfirmar.setEnabled(False)
+            self.btnGerar.setEnabled(False)
+            self.btnAutomatico.setEnabled(False)
+            self.outLexicoSaida.setEnabled(True)
+            self.outLexicoEntrada.setEnabled(True)
+            self.btnLexicoAvancar.setEnabled(True)
+            self.outSintaticoShuntingYardEntrada.setEnabled(False)
+            self.outSintaticoShuntingYardPilha.setEnabled(False)
+            self.outSintaticoShuntingYardFila.setEnabled(False)
+            self.btnSintaticoProximo.setEnabled(False)
+            self.btnSintaticoAnterior.setEnabled(False)
+            self.btnSintaticoShuntingYardAvancar.setEnabled(False)
+            self.outSemanticoEntrada.setEnabled(False)
+            self.btnSemanticoAvancar.setEnabled(False)
+            self.btnSemanticoAdicionar.setEnabled(False)
+            self.outSintaticoShuntingYardEntrada.setHtml(self.strOutSintaticoShuntingYardEntrada)
 
     def passoTmrAutomatico(self):
         if self.tmrAutomaticoState == '':
@@ -355,24 +412,33 @@ class Ui_MainWindow(object):
 
     # Semantico
     def proximoSemantico(self):
-        if self.strOutSemanticoEntrada == '':
+        if self.strOutSemanticoEntrada == 'Entrada: ':
             self.strOutSemanticoEntrada = self.formatacaoEntradaSemantico() + '<br/>'
 
         passo = self.automatoSolver.proximo()
         if passo[0] == 'OPERACAO':
             self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + '<br/>' + self.formatacaoEntradaSemantico() + '<br/>'
             self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + 'Operacao realizada: ' + passo[1] + '<br/>'
+        else:
+            self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + '<br/>' + self.formatacaoEntradaSemantico() + '<br/>'
+            self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + 'Descricao: ' + passo[1] + '<br/>'
 
         self.outSemanticoEntrada.setHtml(self.strOutSemanticoEntrada)
         self.outSemanticoEntrada.verticalScrollBar().setValue(self.outSemanticoEntrada.verticalScrollBar().maximum())
 
     def formatacaoEntradaSemantico(self):
-        retorno = ''
+        retorno = 'Entrada: '
         for index, token in enumerate(self.automatoSolver.entrada, start=0):
             if(token[1] == set()):
                 retorno = retorno + '{ }' + ' '
             else:
                 retorno = retorno + str(token[1]) + ' '
+        retorno = retorno + '<br/>Pilha: '
+        for index, elem in enumerate(self.automatoSolver.pilha, start=0):
+            if (elem == set()):
+                retorno = retorno + '{ }' + ' '
+            else:
+                retorno = retorno + str(elem) + ' '
         return retorno[0:-1]
 
 
@@ -409,5 +475,3 @@ if __name__ == "__main__":
     ui.setupUi(principal)
     principal.show()
     sys.exit(app.exec())
-
-

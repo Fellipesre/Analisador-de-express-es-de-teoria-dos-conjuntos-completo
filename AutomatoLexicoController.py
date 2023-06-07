@@ -202,7 +202,7 @@ class AutomatoLexicoController:
 
         elif self.estadoAutomato == 14:
             self.estadoAutomato = 0
-            valor = self.entrada[self.indexInicioToken:self.indexFinalToken - 1]
+            valor = self.entrada[self.indexInicioToken:self.indexFinalToken]
             self.indexInicioToken = self.indexFinalToken
             self.tokenGerado = ("EQUALS", valor)
             return "EQUALS", valor

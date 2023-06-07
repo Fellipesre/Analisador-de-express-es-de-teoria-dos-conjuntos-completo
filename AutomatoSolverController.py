@@ -138,128 +138,8 @@ class AutomatoSolverController:
         return saida
 
     def proximo(self):
-        if len(self.entrada) == 1:
-            return
-
-        numArgs = self.numArgumento.get((self.entrada[self.index])[0])
-
-        # Verifica se ha operadores que devem ser resolvidos primeiro
-        subIndex = 1
-        while subIndex <= numArgs:
-            token = self.entrada[self.index - subIndex]
-            if token[0] != 'ID' and token[0] != 'SET':
-                self.index = self.index - subIndex
-                return 'TRANSICAO', self.index - subIndex
-            else:
-                subIndex = subIndex + 1
-
-        # Toma os conjuntos da memoria
-        conj = []
-        subIndex = 1
-        conjNaoEncontrado = False
-        while subIndex <= numArgs:
-            token = self.entrada[self.index - subIndex]
-            if token[0] == 'SET':
-                conj.append(token[1])
-            elif token[0] == 'ID':
-                conjMem = self.memConjunto.get(token[1])
-                if conjMem == None:
-                    conjNaoEncontrado = True
-                    #conj.append(token[1])
-                else:
-                    conj.append(conjMem)
-            subIndex = subIndex + 1
-
-        # Gera um conjunto novo caso o mesmo nao esteja na memoria
-
-        operacaoRealizada = ''
-        if conjNaoEncontrado:
-            return 'ERRO', 1
-        #elif conjNaoEncontrado and self.ignrCnjNaoDeclr:
-        else:
-            if (self.entrada[self.index])[0] == 'EQUALS':
-                self.entrada.pop(self.index)
-                self.entrada.pop(self.index - 1)
-                self.entrada.pop(self.index - 2)
-                if isinstance(conj[0], set) and isinstance(conj[1], str):
-                    self.memConjunto[conj[1]] = conj[0]
-                    self.entrada.insert(self.index - 1, ('SET', conj[1]))
-                elif isinstance(conj[0], str) and isinstance(conj[1], set):
-                    self.memConjunto[conj[0]] = conj[1]
-                    self.entrada.insert(self.index - 1, ('SET', conj[0]))
-                else:
-                    return 'ERRO', 2
-                return 'ATRIBUIÇÃO', len(self.memConjunto)
-            elif (self.entrada[self.index])[0] == 'COMPLEMENT':
-                self.entrada.pop(self.index)
-                self.entrada.pop(self.index - 1)
-                if isinstance(conj[0], set):
-                    conjRes = self.complemento(conj[0])
-                    self.entrada.insert(self.index - 1, ('SET', conjRes))
-                    operacaoRealizada = '~' + str(conj[0])
-                else:
-                    return 'ERRO', 3
-
-            elif (self.entrada[self.index])[0] == 'POWERSET':
-                self.entrada.pop(self.index)
-                self.entrada.pop(self.index - 1)
-                if isinstance(conj[0], set):
-                    conjRes = self.conjuntoDasPartes(conj[0])
-                    self.entrada.insert(self.index - 1, ('SET', conjRes))
-                    operacaoRealizada = 'p' + str(conj[0])
-                else:
-                    return 'ERRO', 4
-
-            elif (self.entrada[self.index])[0] == 'UNION':
-                self.entrada.pop(self.index)
-                self.entrada.pop(self.index - 1)
-                self.entrada.pop(self.index - 2)
-                if isinstance(conj[0], set) and isinstance(conj[1], set):
-                    conjRes = self.uniao(conj[1], conj[0])
-                    self.entrada.insert(self.index - 2, ('SET', conjRes))
-                    operacaoRealizada = str(conj[1]) + ' \\/ ' + str(conj[0])
-                else:
-                    return 'ERRO', 5
-
-            elif (self.entrada[self.index])[0] == 'INTERSECTION':
-                self.entrada.pop(self.index)
-                self.entrada.pop(self.index - 1)
-                self.entrada.pop(self.index - 2)
-                if isinstance(conj[0], set) and isinstance(conj[1], set):
-                    conjRes = self.interseccao(conj[1], conj[0])
-                    self.entrada.insert(self.index - 2, ('SET', conjRes))
-                    operacaoRealizada = str(conj[1]) + ' /\\ ' + str(conj[0])
-                else:
-                    return 'ERRO', 6
-
-            elif (self.entrada[self.index])[0] == 'PRODUCT':
-                self.entrada.pop(self.index)
-                self.entrada.pop(self.index - 1)
-                self.entrada.pop(self.index - 2)
-                if isinstance(conj[0], set) and isinstance(conj[1], set):
-                    conjRes = self.produtoCartesiano(conj[1], conj[0])
-                    self.entrada.insert(self.index - 2, ('SET', conjRes))
-                    operacaoRealizada = str(conj[1]) + ' x ' + str(conj[0])
-                else:
-                    return 'ERRO', 7
-
-            elif (self.entrada[self.index])[0] == 'DIFFERENCE':
-                self.entrada.pop(self.index)
-                self.entrada.pop(self.index - 1)
-                self.entrada.pop(self.index - 2)
-                if isinstance(conj[0], set) and isinstance(conj[1], set):
-                    conjRes = self.diferenca(conj[1], conj[0])
-                    self.entrada.insert(self.index - 2, ('SET', conjRes))
-                    operacaoRealizada = str(conj[1]) + ' - ' + str(conj[0])
-                else:
-                    return 'ERRO', 8
-
-            self.index = len(self.entrada) - 1
-            return 'OPERACAO', operacaoRealizada
-
-    def novoProximo(self):
-        if len(self.entrada) == 1:
-            return
+        if len(self.entrada) == 0:
+            return 'RESULTADO', 'Resultado: ' + str(self.pilha[0])
         token = self.entrada[0]
 
         if token[0] == 'SET':
@@ -290,6 +170,8 @@ class AutomatoSolverController:
                 conjRes = self.complemento(varDireita)
                 operacaoRealizada = '~' + str(varDireita)
             elif token[0] == 'POWERSET':
+                if (len(varDireita) >= 8):
+                    return 'ERRO', 'POWERSET envolvendo conjunto de cardinalidade maior que 8.'
                 conjRes = self.conjuntoDasPartes(varDireita)
                 operacaoRealizada = 'p' + str(varDireita)
             self.entrada.pop(0)
@@ -327,6 +209,8 @@ class AutomatoSolverController:
                 conjRes = self.interseccao(varEsquerda, varDireita)
                 operacaoRealizada = str(varEsquerda) + '/\\' + str(varDireita)
             elif token[0] == 'PRODUCT':
+                if (len(varDireita)*len(varEsquerda) >= 1000):
+                    return 'ERRO', 'PRODUCT com resultado maior que 1000.'
                 conjRes = self.produtoCartesiano(varEsquerda, varDireita)
                 operacaoRealizada = str(varEsquerda) + 'x' + str(varDireita)
             elif token[0] == 'DIFFERENCE':
@@ -343,3 +227,7 @@ class AutomatoSolverController:
             self.pilha.append(conjRes)
 
         return 'OPERACAO', operacaoRealizada
+
+#BUG 10 avancar
+#((~(((p(((E/\V)xI)x{-4, -3}))\/{4, -1})x{}))-{})xO
+#((~(((p((({1,-1}/\{0,1})x{-1,0,1})x{-4, -3}))\/{4, -1})x{}))-{})x{0}

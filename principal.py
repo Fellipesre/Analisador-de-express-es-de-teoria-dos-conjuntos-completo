@@ -154,6 +154,7 @@ class Ui_MainWindow(object):
         self.strOutSintaticoShuntingYardFila = ""
         self.strOutSintaticoShuntingYardPilha = ""
         self.strOutSemanticoEntrada = ""
+        self.memConjunto = None
         # Tabela variavel
         self.tblSemanticoMemoria.setHorizontalHeaderLabels(['ID', 'CONJUNTO'])
         self.tblSemanticoMemoria.setItem(0, 1, self.gerarCelulaConjuntoVazia())
@@ -224,6 +225,8 @@ class Ui_MainWindow(object):
         if(self.automatoPushdown.analiseSintatica(saidaAutomatoLexico) == 0):
             self.automatoShuntingYard.resetar(self.automatoLexico.saida())
             self.automatoSolver.resetar(self.automatoShuntingYard.saida())
+            if self.memConjunto is not None:
+                self.automatoSolver.memConjunto = self.memConjunto
             self.automatoShuntingYard.resetar(self.automatoLexico.saida())
             return 0
         else:
@@ -241,6 +244,61 @@ class Ui_MainWindow(object):
 
         self.inpExpressao.setText(entrada)
 
+    def resetarExpressao(self):
+        # Variaveis
+        self.automatoLexico = AutomatoLexicoController("")
+        self.automatoPushdown = AutomatoPushdownController()
+        self.automatoShuntingYard = AutomatoShuntingYardController([])
+        self.memConjunto = self.automatoSolver.memConjunto
+        self.automatoSolver = AutomatoSolverController([], list(range(-101, 101)))
+        self.automatoSolver.memConjunto = self.memConjunto
+        self.strOutLexicoEntrada = ""
+        self.strOutLexicoSaida = ""
+        self.strOutSintaticoShuntingYardEntrada = ""
+        self.strOutSintaticoShuntingYardFila = ""
+        self.strOutSintaticoShuntingYardPilha = ""
+        self.strOutSemanticoEntrada = ""
+
+        # Timers
+        self.tmrAutomaticoState = 'INI'
+
+        # Estados pre-setados
+        self.outLexicoSaida.setEnabled(False)
+        self.outLexicoEntrada.setEnabled(False)
+        self.btnLexicoAvancar.setEnabled(False)
+        self.outSintaticoShuntingYardEntrada.setEnabled(False)
+        self.outSintaticoShuntingYardPilha.setEnabled(False)
+        self.outSintaticoShuntingYardFila.setEnabled(False)
+        self.btnSintaticoProximo.setEnabled(False)
+        self.btnSintaticoAnterior.setEnabled(False)
+        self.btnSintaticoShuntingYardAvancar.setEnabled(False)
+        self.outSemanticoEntrada.setEnabled(False)
+        self.btnSemanticoAvancar.setEnabled(False)
+        self.btnSemanticoAdicionar.setEnabled(False)
+        self.btnAutomatico.setEnabled(True)
+        self.inpExpressao.setEnabled(True)
+        self.btnGerar.setEnabled(True)
+        self.tabPrincipal.setTabEnabled(0, True)
+        self.tabPrincipal.setTabEnabled(1, True)
+        self.tabPrincipal.setTabEnabled(2, True)
+        self.btnConfirmar.setText("Confirmar")
+        self.btnAutomatico.setText("Automático")
+
+        # Botao automatico
+        self.btnAutomatico.clicked.disconnect()
+        self.btnAutomatico.clicked.connect(self.iniciarTmrAutomatico)
+        # Botao confirmar
+        self.btnConfirmar.clicked.disconnect()
+        self.btnConfirmar.clicked.connect(self.confirmarExpressao)
+
+        #Refresh campos
+        self.outLexicoSaida.setText(self.strOutLexicoSaida)
+        self.outLexicoEntrada.setHtml(self.strOutLexicoEntrada)
+        self.outSintaticoShuntingYardEntrada.setHtml(self.strOutSintaticoShuntingYardEntrada)
+        self.outSintaticoShuntingYardFila.setHtml(self.strOutSintaticoShuntingYardFila)
+        self.outSintaticoShuntingYardPilha.setHtml(self.strOutSintaticoShuntingYardPilha)
+        self.outSemanticoEntrada.setHtml(self.strOutSemanticoEntrada)
+
     def confirmarExpressao(self):
         retornoInicializacaoAutomato = self.iniciarAutomatos()
         if (retornoInicializacaoAutomato == 0):
@@ -250,7 +308,7 @@ class Ui_MainWindow(object):
             self.strOutSintaticoShuntingYardFila = ""
             self.strOutSintaticoShuntingYardPilha = ""
             self.inpExpressao.setEnabled(False)
-            self.btnConfirmar.setEnabled(False)
+            #self.btnConfirmar.setEnabled(False)
             self.btnGerar.setEnabled(False)
             self.btnAutomatico.setEnabled(False)
             self.outLexicoSaida.setEnabled(True)
@@ -272,7 +330,7 @@ class Ui_MainWindow(object):
             self.strOutSintaticoShuntingYardFila = ""
             self.strOutSintaticoShuntingYardPilha = ""
             self.inpExpressao.setEnabled(False)
-            self.btnConfirmar.setEnabled(False)
+            #self.btnConfirmar.setEnabled(False)
             self.btnGerar.setEnabled(False)
             self.btnAutomatico.setEnabled(False)
             self.outLexicoSaida.setEnabled(False)
@@ -289,6 +347,7 @@ class Ui_MainWindow(object):
             self.btnSemanticoAdicionar.setEnabled(False)
             self.outLexicoEntrada.setHtml(self.strOutLexicoEntrada)
             self.outSintaticoShuntingYardEntrada.setHtml(self.strOutSintaticoShuntingYardEntrada)
+            self.tmrAutomaticoState = 'ERR'
         elif(retornoInicializacaoAutomato == -2):
             self.strOutLexicoEntrada = ""
             self.strOutLexicoSaida = ""
@@ -296,7 +355,7 @@ class Ui_MainWindow(object):
             self.strOutSintaticoShuntingYardFila = ""
             self.strOutSintaticoShuntingYardPilha = ""
             self.inpExpressao.setEnabled(False)
-            self.btnConfirmar.setEnabled(False)
+            #self.btnConfirmar.setEnabled(False)
             self.btnGerar.setEnabled(False)
             self.btnAutomatico.setEnabled(False)
             self.outLexicoSaida.setEnabled(True)
@@ -312,12 +371,17 @@ class Ui_MainWindow(object):
             self.btnSemanticoAvancar.setEnabled(False)
             self.btnSemanticoAdicionar.setEnabled(False)
             self.outSintaticoShuntingYardEntrada.setHtml(self.strOutSintaticoShuntingYardEntrada)
+            self.tmrAutomaticoState = 'ERR'
+        self.btnConfirmar.setText("Resetar")
+        self.btnConfirmar.clicked.disconnect()
+        self.btnConfirmar.clicked.connect(self.resetarExpressao)
 
     def passoTmrAutomatico(self):
         if self.tmrAutomaticoState == 'INI':
             self.confirmarExpressao()
             self.btnAutomatico.setEnabled(True)
-            self.habilitarLexicoTmrAutomatico()
+            if self.tmrAutomaticoState != 'ERR':
+                self.habilitarLexicoTmrAutomatico()
         elif self.tmrAutomaticoState == 'LEX':
             self.proximoLexico()
         elif self.tmrAutomaticoState == 'SIN':
@@ -327,6 +391,7 @@ class Ui_MainWindow(object):
 
     def iniciarTmrAutomatico(self):
         self.tmrAutomatico.start(1000)
+        self.btnAutomatico.clicked.disconnect()
         self.btnAutomatico.clicked.connect(self.finalizarTmrAutomatico)
         self.tabPrincipal.setTabEnabled(0, False)
         self.tabPrincipal.setTabEnabled(1, False)
@@ -341,6 +406,7 @@ class Ui_MainWindow(object):
         self.outLexicoSaida.setEnabled(False)
         self.outLexicoEntrada.setEnabled(False)
         self.btnLexicoAvancar.setEnabled(True)
+        self.btnAutomatico.clicked.disconnect()
         self.btnAutomatico.clicked.connect(self.iniciarTmrAutomatico)
         self.btnAutomatico.setText("Retomar")
 
@@ -368,6 +434,8 @@ class Ui_MainWindow(object):
         self.outSintaticoShuntingYardPilha.setEnabled(False)
         self.outSintaticoShuntingYardFila.setEnabled(False)
         self.btnSintaticoShuntingYardAvancar.setEnabled(True)
+        self.btnSintaticoProximo.setEnabled(False)
+        self.btnSintaticoAnterior.setEnabled(False)
         self.outSemanticoEntrada.setEnabled(False)
         self.btnSemanticoAvancar.setEnabled(True)
         self.btnSemanticoAdicionar.setEnabled(True)

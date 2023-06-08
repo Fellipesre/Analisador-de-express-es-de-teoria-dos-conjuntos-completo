@@ -155,6 +155,7 @@ class AutomatoSolverController:
         varEsquerda = None
         conjRes = None
         operacaoRealizada = None
+        isEquals = False
         if(self.numArgumento.get(token[0]) == 1):
             if isinstance(self.pilha[-1], str):
                 varDireita = self.memConjunto.get(self.pilha[-1])
@@ -220,13 +221,17 @@ class AutomatoSolverController:
                 self.adicionarConjuntoAMemoria(varEsquerda, varDireita)
                 operacaoRealizada = varEsquerda + '=' + str(varDireita)
                 conjRes = varDireita
+                isEquals = True
 
             self.entrada.pop(0)
             self.pilha.pop(-1)
             self.pilha.pop(-1)
             self.pilha.append(conjRes)
 
-        return 'OPERACAO', operacaoRealizada
+        if(isEquals):
+            return 'EQUALS', operacaoRealizada
+        else:
+            return 'OPERACAO', operacaoRealizada
 
 #BUG 10 avancar
 #((~(((p(((E/\V)xI)x{-4, -3}))\/{4, -1})x{}))-{})xO

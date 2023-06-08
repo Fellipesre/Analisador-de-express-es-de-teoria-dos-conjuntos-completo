@@ -142,7 +142,7 @@ class Ui_MainWindow(object):
         # Timers
         self.tmrAutomatico = QTimer()
         self.tmrAutomatico.timeout.connect(self.passoTmrAutomatico)
-        self.tmrAutomaticoState = ''
+        self.tmrAutomaticoState = 'INI'
         # Variaveis
         self.automatoLexico = AutomatoLexicoController("")
         self.automatoPushdown = AutomatoPushdownController()
@@ -314,7 +314,7 @@ class Ui_MainWindow(object):
             self.outSintaticoShuntingYardEntrada.setHtml(self.strOutSintaticoShuntingYardEntrada)
 
     def passoTmrAutomatico(self):
-        if self.tmrAutomaticoState == '':
+        if self.tmrAutomaticoState == 'INI':
             self.confirmarExpressao()
             self.btnAutomatico.setEnabled(True)
             self.habilitarLexicoTmrAutomatico()
@@ -328,33 +328,58 @@ class Ui_MainWindow(object):
     def iniciarTmrAutomatico(self):
         self.tmrAutomatico.start(1000)
         self.btnAutomatico.clicked.connect(self.finalizarTmrAutomatico)
+        self.tabPrincipal.setTabEnabled(0, False)
         self.tabPrincipal.setTabEnabled(1, False)
         self.tabPrincipal.setTabEnabled(2, False)
-        self.tabPrincipal.setTabEnabled(3, False)
+        self.btnAutomatico.setText("Pausar")
 
     def finalizarTmrAutomatico(self):
         self.tmrAutomatico.stop()
-        self.btnAutomatico.clicked.connect(self.iniciarTmrAutomatico)
-
-    def habilitarLexicoTmrAutomatico(self):
-        self.tmrAutomaticoState = 'LEX'
+        self.tabPrincipal.setTabEnabled(0, True)
+        self.tabPrincipal.setTabEnabled(1, True)
+        self.tabPrincipal.setTabEnabled(2, True)
         self.outLexicoSaida.setEnabled(False)
         self.outLexicoEntrada.setEnabled(False)
         self.btnLexicoAvancar.setEnabled(True)
+        self.btnAutomatico.clicked.connect(self.iniciarTmrAutomatico)
+        self.btnAutomatico.setText("Retomar")
 
-    def habilitarSintaticoTmrAutomatico(self):
-        self.tmrAutomaticoState = 'SIN'
-        self.tabPrincipal.setCurrentIndex(1)
+    def habilitarLexicoTmrAutomatico(self):
+        self.tmrAutomaticoState = 'LEX'
+        self.tabPrincipal.setCurrentIndex(0)
+        self.tabPrincipal.setTabEnabled(0, True)
+        self.tabPrincipal.setTabEnabled(1, False)
+        self.tabPrincipal.setTabEnabled(2, False)
+        self.outLexicoSaida.setEnabled(False)
+        self.outLexicoEntrada.setEnabled(False)
+        self.btnLexicoAvancar.setEnabled(True)
         self.outSintaticoShuntingYardEntrada.setEnabled(False)
         self.outSintaticoShuntingYardPilha.setEnabled(False)
         self.outSintaticoShuntingYardFila.setEnabled(False)
         self.btnSintaticoShuntingYardAvancar.setEnabled(True)
 
+    def habilitarSintaticoTmrAutomatico(self):
+        self.tmrAutomaticoState = 'SIN'
+        self.tabPrincipal.setCurrentIndex(1)
+        self.tabPrincipal.setTabEnabled(0, False)
+        self.tabPrincipal.setTabEnabled(1, True)
+        self.tabPrincipal.setTabEnabled(2, False)
+        self.outSintaticoShuntingYardEntrada.setEnabled(False)
+        self.outSintaticoShuntingYardPilha.setEnabled(False)
+        self.outSintaticoShuntingYardFila.setEnabled(False)
+        self.btnSintaticoShuntingYardAvancar.setEnabled(True)
+        self.outSemanticoEntrada.setEnabled(False)
+        self.btnSemanticoAvancar.setEnabled(True)
+        self.btnSemanticoAdicionar.setEnabled(True)
+
     def habilitarSemanticoTmrAutomatico(self):
         self.tmrAutomaticoState = 'SEM'
+        self.tabPrincipal.setTabEnabled(0, False)
+        self.tabPrincipal.setTabEnabled(1, False)
+        self.tabPrincipal.setTabEnabled(2, True)
         self.tabPrincipal.setCurrentIndex(2)
         self.outSemanticoEntrada.setEnabled(False)
-        self.btnSemanticoAvancar.setEnabled(False)
+        self.btnSemanticoAvancar.setEnabled(True)
         self.btnSemanticoAdicionar.setEnabled(True)
 
     # Lexico
@@ -419,6 +444,11 @@ class Ui_MainWindow(object):
         if passo[0] == 'OPERACAO':
             self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + '<br/>' + self.formatacaoEntradaSemantico() + '<br/>'
             self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + 'Operacao realizada: ' + passo[1] + '<br/>'
+        elif passo[0] == 'EQUALS':
+            self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + '<br/>' + self.formatacaoEntradaSemantico() + '<br/>'
+            self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + 'Operacao realizada: ' + passo[1] + '<br/>'
+
+            self.updateTabelaMemoria()
         else:
             self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + '<br/>' + self.formatacaoEntradaSemantico() + '<br/>'
             self.strOutSemanticoEntrada = self.strOutSemanticoEntrada + 'Descricao: ' + passo[1] + '<br/>'
@@ -447,6 +477,14 @@ class Ui_MainWindow(object):
         elemConjunto = self.inpSemanticoConjunto.text()
         self.automatoSolver.adicionarConjuntoAMemoria(elemId, elemConjunto if elemConjunto is not None else set())
 
+        self.updateTabelaMemoria()
+
+    def gerarCelulaConjuntoVazia(self):
+        colConjunto = QtWidgets.QTableWidgetItem('')
+        colConjunto.setFlags(colConjunto.flags() & ~QtCore.Qt.ItemIsEditable)
+        return colConjunto
+
+    def updateTabelaMemoria(self):
         if len(self.automatoSolver.memConjunto) > self.tblSemanticoMemoria.rowCount():
             valorLinhaNova = self.tblSemanticoMemoria.rowCount()
             self.tblSemanticoMemoria.insertRow(valorLinhaNova)
@@ -461,11 +499,6 @@ class Ui_MainWindow(object):
 
             self.tblSemanticoMemoria.setItem(num, 0, colIdConjunto)
             self.tblSemanticoMemoria.setItem(num, 1, colConjunto)
-
-    def gerarCelulaConjuntoVazia(self):
-        colConjunto = QtWidgets.QTableWidgetItem('')
-        colConjunto.setFlags(colConjunto.flags() & ~QtCore.Qt.ItemIsEditable)
-        return colConjunto
 
 if __name__ == "__main__":
     import sys
